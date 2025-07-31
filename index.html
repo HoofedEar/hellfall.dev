@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unofficial Hellfall</title>
+    <link rel="stylesheet" href="https://unpkg.com/thesims.css">
+    <style>
+        body {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 16px;
+        }
+
+        /* Prevent zoom on input focus on mobile */
+        input[type="text"] {
+            font-size: 16px !important;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-align: center;
+            padding: 8px;
+        }
+
+        .container {
+            margin: 0 auto;
+        }
+
+        /* Card Grid */
+        .card-list {
+            display: grid;
+            gap: 16px;
+            justify-content: center;
+            justify-items: center;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 320px));
+            max-width: var(--max-grid-width, 1312px);
+            margin: 0 auto;
+        }
+
+        /* Field Row */
+        .field-row {
+            display: flex;
+            align-items: center;
+        }
+
+        .main-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            min-width: 40vw;
+            max-width: 80vw;
+            width: auto;
+            max-height: 80vh;
+            background-color: #000c4b;
+            z-index: 1000;
+            overflow: auto;
+            padding: 24px;
+            border-radius: 10px;
+            box-sizing: border-box;
+        }
+
+        /* Card Face Header */
+        .card-face-header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .card-face-type {
+            flex: 1;
+            min-width: 0;
+            /* Allow shrinking */
+        }
+
+        .card-face-cost {
+            flex-shrink: 0;
+        }
+
+        /* Placeholder Card */
+        .placeholder-card {
+            width: 300px;
+            height: 418px;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border: 2px solid #444;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            font-size: 14px;
+            text-align: center;
+            padding: 16px;
+            box-sizing: border-box;
+        }
+
+        .placeholder-card .card-name {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 8px;
+            word-wrap: break-word;
+        }
+
+        .placeholder-card .card-type {
+            color: #b0c4ff;
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+
+        .placeholder-card .card-cost {
+            margin-bottom: 8px;
+        }
+
+        .mana-symbol {
+            float: none !important;
+            width: 1.3em !important;
+            height: 1.3em !important;
+            line-height: 1.35em !important;
+            margin: 0 1px 0 0 !important;
+        }
+
+        .card-text .mana-symbol,
+        .flavor-text .mana-symbol {
+            font-size: 0.7em !important;
+            margin: 0 1px 0 0 !important;
+        }
+
+        /* Pagination Controls */
+        .pagination-controls button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination-controls button:disabled:hover {
+            background-color: inherit;
+        }
+
+        /* Tablet and Small Desktop (≤900px) */
+        @media screen and (max-width: 900px) {
+            .main-modal {
+                top: 0;
+                left: 0;
+                transform: none;
+                min-width: 100vw;
+                max-width: 100vw;
+                width: 100vw;
+                height: 100vh;
+                max-height: 100vh;
+                padding: 16px;
+                border-radius: 0;
+                overflow-y: auto;
+            }
+        }
+
+        /* Mobile Landscape and Small Tablet (≤768px) */
+        @media screen and (max-width: 768px) {
+
+            /* Header adjustments */
+            .header {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .header>div {
+                flex-direction: column;
+                gap: 12px;
+                width: 100%;
+            }
+
+            /* Card grid adjustments */
+            .card-list {
+                gap: 8px;
+                grid-template-columns: repeat(2, 1fr);
+                max-width: 100%;
+            }
+
+            .card-list .card img {
+                width: 100%;
+                max-width: 100%;
+                height: auto;
+                aspect-ratio: 5/7;
+                object-fit: cover;
+            }
+
+            /* Placeholder card adjustments */
+            .placeholder-card {
+                width: 100% !important;
+                height: auto !important;
+                aspect-ratio: 5/7;
+                font-size: 12px;
+                padding: 12px;
+            }
+
+            .placeholder-card .card-name {
+                font-size: 14px;
+                margin-bottom: 6px;
+            }
+
+            .placeholder-card .card-type {
+                font-size: 11px;
+                margin-bottom: 6px;
+            }
+
+            /* Modal content adjustments */
+            .main-modal .content>div {
+                flex-direction: column !important;
+                gap: 20px !important;
+                align-items: center !important;
+            }
+
+            .main-modal .content img {
+                min-width: auto;
+                max-width: 90%;
+                width: auto;
+                height: auto;
+                max-height: 50vh;
+                align-self: center;
+                object-fit: contain !important;
+            }
+
+            .main-modal .content>div>div:last-child {
+                min-width: 100% !important;
+                width: 100% !important;
+                align-self: stretch !important;
+            }
+
+            .main-modal .content .card-name {
+                text-align: center !important;
+                font-size: 1.3em !important;
+            }
+
+            .main-modal .content .card-details {
+                font-size: 1em !important;
+            }
+
+            .main-modal .content .card-text {
+                font-size: 1em !important;
+                line-height: 1.4 !important;
+            }
+
+            /* Pagination adjustments */
+            .pagination-controls {
+                margin: 16px 0 !important;
+                gap: 8px !important;
+            }
+
+            /* Mana symbol adjustments */
+            .mana-symbol {
+                width: 1.1em !important;
+                height: 1.1em !important;
+                line-height: 1.2em !important;
+            }
+        }
+
+        /* Small Mobile (≤600px) */
+        @media screen and (max-width: 600px) {
+            .card-face-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .card-face-cost {
+                align-self: flex-end;
+            }
+        }
+
+        /* Extra Small Mobile (≤480px) */
+        @media screen and (max-width: 480px) {
+            .card-list {
+                gap: 6px;
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .placeholder-card {
+                font-size: 11px;
+                padding: 10px;
+            }
+
+            .placeholder-card .card-name {
+                font-size: 13px;
+                margin-bottom: 5px;
+            }
+
+            .placeholder-card .card-type {
+                font-size: 10px;
+                margin-bottom: 5px;
+            }
+
+            .main-modal {
+                padding: 12px;
+            }
+
+            .mana-symbol {
+                width: 1em !important;
+                height: 1em !important;
+                line-height: 1.1em !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 id="top">Unofficial Hellfall</h1>
+            <div style="display: flex; align-items: center; gap: 16px; max-width: 400px; width: 100%;">
+                <!-- <div class="field-row" style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="imageToggle" />
+                    <label for="imageToggle" style="color: white;">Show Images</label>
+                </div> -->
+                <div class="field-row" style="width: 100%;">
+                    <input type="text" id="searchInput" style="width: 100%" name="input-text-1"
+                        placeholder="Search / Filter" />
+                </div>
+            </div>
+        </div>
+        <div class="card-list" id="card-container">
+
+        </div>
+
+        <!-- Empty state message -->
+        <div id="empty-state"
+            style="text-align: center; color: #b0c4ff; padding: 40px; font-size: 1.2em; display: block;">
+            <div style="margin-bottom: 8px; font-weight: bold;">Ready to explore Hellfall cards?</div>
+            <div>Enter a search term, or an empty search to view all cards</div>
+            <div>Try 'set:hc4' or 'c=u' or 'o:"three cards"'</div>
+        </div>
+
+        <!-- No results message -->
+        <div id="no-results"
+            style="text-align: center; color: #b0c4ff; padding: 40px; font-size: 1.2em; display: none;">
+            <div style="margin-bottom: 8px; font-weight: bold;">No cards found</div>
+            <div>Try adjusting your search terms or filters</div>
+        </div>
+
+        <!-- Pagination controls -->
+        <div class="pagination-controls"
+            style="display: flex; justify-content: center; align-items: center; gap: 12px; margin: 20px 0;">
+            <button type="button" id="prev-page" class="skew">Previous</button>
+            <span id="page-info" style="color: white; font-weight: bold;">Page 1 of 1</span>
+            <button type="button" id="next-page" class="skew">Next</button>
+        </div>
+    </div>
+    <div class="main-modal modal" id="main-dialog">
+        <p>
+            <span class="content"></span>
+        </p>
+        <div class="button-group">
+            <button type="button" class="skew">OK</button>
+        </div>
+    </div>
+
+    <script>
+        document.querySelector('.modal .skew').addEventListener('click', function () {
+            document.getElementById('main-dialog').style.display = 'none';
+        });
+
+        // Pagination event listeners
+        document.getElementById('prev-page').addEventListener('click', function () {
+            if (currentPage > 1) {
+                currentPage--;
+                parseCards();
+                updatePaginationInfo();
+            }
+        });
+
+        document.getElementById('next-page').addEventListener('click', function () {
+            const cardsToUse = filteredCards.length > 0 ? filteredCards : [];
+            const totalPages = Math.ceil(cardsToUse.length / CARDS_PER_PAGE);
+            if (currentPage < totalPages) {
+                currentPage++;
+                parseCards();
+                updatePaginationInfo();
+                // Scroll to top of the card list
+                document.getElementById('top').scrollIntoView({ behavior: 'smooth' });
+            }
+        });
+
+        // Advanced search functionality (Scryfall-style)
+        document.getElementById('searchInput').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                const searchTerm = e.target.value.trim();
+
+                if (searchTerm === '') {
+                    filteredCards = allCards.data;  // Show all cards when search is empty
+                } else {
+                    filteredCards = allCards.data.filter(card => matchesSearchQuery(card, searchTerm));
+                }
+
+                // Update URL with the search query
+                updateUrlWithSearch(searchTerm);
+
+                // Reset to page 1 when searching
+                currentPage = 1;
+                hasSearched = true; // Mark that user has performed a search
+                parseCards();
+            }
+        });
+
+        function matchesSearchQuery(card, query) {
+            const queryLower = query.toLowerCase();
+
+            // Parse search query into tokens
+            const tokens = parseSearchQuery(queryLower);
+
+            // If no special tokens found, do a general text search
+            if (tokens.general.length > 0 && tokens.filters.length === 0) {
+                const generalText = tokens.general.join(' ');
+                return card.Name.toLowerCase().includes(generalText) ||
+                    (card['Name'][0] && card['Name'][0].toLowerCase().includes(generalText)) ||
+                    card.Set.toLowerCase().includes(generalText) ||
+                    card.Creator.toLowerCase().includes(generalText);
+            }
+
+            // Check all filter conditions (AND logic for different filter types, OR for same type)
+            const filterResults = {};
+
+            tokens.filters.forEach(filter => {
+                if (!filterResults[filter.type]) {
+                    filterResults[filter.type] = [];
+                }
+                filterResults[filter.type].push(matchesFilter(card, filter));
+            });
+
+            // All filter types must have at least one match (AND between types)
+            // But within the same type, any match is sufficient (OR within type)
+            for (const filterType in filterResults) {
+                if (!filterResults[filterType].some(result => result)) {
+                    return false;
+                }
+            }
+
+            // If there are general terms, they must also match (search in name and text)
+            if (tokens.general.length > 0) {
+                const generalText = tokens.general.join(' ');
+                const generalMatch = card.Name.toLowerCase().includes(generalText) ||
+                    (card['Text Box'][0] && card['Text Box'][0].toLowerCase().includes(generalText)) ||
+                    card.Set.toLowerCase().includes(generalText) ||
+                    card.Creator.toLowerCase().includes(generalText);
+                if (!generalMatch) return false;
+            }
+
+            return true;
+        }
+
+        function parseSearchQuery(query) {
+            const tokens = { filters: [], general: [] };
+
+            // Split by spaces but preserve quoted strings - improved regex to handle filter:quoted patterns
+            const parts = query.match(/\w+:"[^"]*"|\w+:[^\s]+|"[^"]*"|[^\s"]+/g) || [];
+
+            parts.forEach(part => {
+                const originalPart = part;
+
+                // Check for filter patterns BEFORE removing quotes
+                const filterMatch = part.match(/^(set|s|color|c|colours|oracle|o|type|t|cmc|mana|cost|power|pow|toughness|tou|creator|cr)([:=]|>=|<=|>|<|!=)(.+)$/);
+
+                if (filterMatch) {
+                    const [, filterType, operator, filterValue] = filterMatch;
+                    // Remove quotes from the filter value if present
+                    const cleanFilterValue = filterValue.replace(/^"|"$/g, '');
+                    tokens.filters.push({
+                        type: normalizeFilterType(filterType),
+                        operator: operator, // Store the operator (: = >= <= > < !=)
+                        value: cleanFilterValue.toLowerCase()
+                    });
+                } else {
+                    // Remove quotes for general terms
+                    const cleanPart = part.replace(/"/g, '');
+                    tokens.general.push(cleanPart);
+                }
+            });
+
+            // console.log('Final tokens:', tokens); // Debug logging
+            return tokens;
+        }
+
+        function normalizeFilterType(type) {
+            switch (type) {
+                case 's': return 'set';
+                case 'c': case 'colour': case 'colours': return 'color';
+                case 'o': return 'oracle';
+                case 't': return 'type';
+                case 'mana': case 'cost': return 'cmc';
+                case 'pow': return 'power';
+                case 'tou': return 'toughness';
+                case 'cr': return 'creator';
+                default: return type;
+            }
+        }
+
+        function matchesFilter(card, filter) {
+            switch (filter.type) {
+                case 'set':
+                    return card.Set.toLowerCase() === filter.value;
+
+                case 'oracle':
+                    // Search for the filter value as a substring in any of the card's text boxes (case-insensitive)
+                    // console.log('Oracle search for:', filter.value); // Debug logging
+                    return (card['Text Box'] || []).some(text => {
+                        if (!text) return false;
+                        const textLower = text.toLowerCase();
+                        const matches = textLower.includes(filter.value);
+                        // // Debug logging for oracle searches
+                        // console.log('Checking text:', text, 'lowercase:', textLower, 'search term:', filter.value, 'matches:', matches);
+                        // if (matches) {
+                        //     console.log(`Oracle match found: "${filter.value}" in "${text}"`);
+                        // }
+                        return matches;
+                    });
+
+                case 'color':
+                    return matchesColor(card, filter.value, filter.operator);
+
+                case 'type':
+                    const cardTypes = [
+                        ...(card['Supertype(s)'] || []),
+                        ...(card['Card Type(s)'] || []),
+                        ...(card['Subtype(s)'] || [])
+                    ].filter(t => t && t.trim()).map(t => t.toLowerCase());
+                    return cardTypes.some(type => type.includes(filter.value));
+
+                case 'cmc':
+                    const targetCmc = parseInt(filter.value);
+                    return !isNaN(targetCmc) && card.CMC === targetCmc;
+
+                case 'power':
+                    const targetPower = parseInt(filter.value);
+                    const cardPower = parseInt(card.power[0]);
+                    return !isNaN(targetPower) && !isNaN(cardPower) && cardPower === targetPower;
+
+                case 'toughness':
+                    const targetToughness = parseInt(filter.value);
+                    const cardToughness = parseInt(card.toughness[0]);
+                    return !isNaN(targetToughness) && !isNaN(cardToughness) && cardToughness === targetToughness;
+
+                case 'creator':
+                    return card.Creator.toLowerCase().includes(filter.value);
+
+                default:
+                    return false;
+            }
+        }
+
+        function matchesColor(card, colorQuery, operator = ':') {
+            const cardColor = (card['Color(s)'] || '').toLowerCase();
+
+            // console.log(colorQuery);
+
+            // Handle color abbreviations and full names
+            const colorMap = {
+                'w': 'white',
+                'u': 'blue',
+                'b': 'black',
+                'r': 'red',
+                'g': 'green',
+                'p': 'purple',
+                'c': 'colorless'
+            };
+
+            // Parse the card's colors into a set
+            const cardColors = parseColorsToSet(cardColor, colorMap);
+
+            // Parse the query colors into a set
+            const queryColors = parseColorsToSet(colorQuery, colorMap);
+
+            // Handle different operators
+            switch (operator) {
+                case '=':
+                    // Exact match - card must have exactly these colors, no more, no less
+                    // For colorless: queryColors is Set { 'colorless' }, cardColors should be empty or Set { 'colorless' }
+                    if (queryColors.size === 1 && queryColors.has('colorless')) {
+                        return cardColors.size === 0 || (cardColors.size === 1 && cardColors.has('colorless'));
+                    }
+                    // For all other colors, cardColors must match queryColors exactly (ignoring 'colorless')
+                    const cardColorsNoColorless = new Set([...cardColors].filter(c => c !== 'colorless'));
+                    const queryColorsNoColorless = new Set([...queryColors].filter(c => c !== 'colorless'));
+                    return setsEqual(cardColorsNoColorless, queryColorsNoColorless) && cardColorsNoColorless.size === queryColorsNoColorless.size;
+
+                case ':':
+                default:
+                    // Contains operator - card must have at least one of the query colors
+                    if (queryColors.has('colorless')) {
+                        // Special case: searching for colorless cards
+                        return cardColors.size === 0 || cardColors.has('colorless');
+                    }
+                    // Check if card has any of the query colors
+                    return [...queryColors].some(color => cardColors.has(color));
+
+                case '<=':
+                    // At most - card's colors must be a subset of query colors
+                    if (queryColors.has('colorless')) {
+                        // If searching for "at most colorless", only true colorless cards match
+                        return cardColors.size === 0 || (cardColors.size === 1 && cardColors.has('colorless'));
+                    }
+                    // Remove colorless from card colors for this comparison
+                    const cardColorsFiltered = new Set([...cardColors].filter(c => c !== 'colorless'));
+                    // All of the card's colors must be in the query set
+                    return [...cardColorsFiltered].every(color => queryColors.has(color));
+
+                case '>=':
+                    // At least - card must contain all query colors (and can have more)
+                    if (queryColors.has('colorless')) {
+                        // Special case: if query includes colorless, card must be colorless
+                        return cardColors.size === 0 || cardColors.has('colorless');
+                    }
+                    // Card must contain all query colors
+                    return [...queryColors].every(color => cardColors.has(color));
+
+                case '>':
+                    // More than - card must contain all query colors plus at least one more
+                    if (queryColors.has('colorless')) {
+                        return false; // Can't have more than colorless
+                    }
+                    const hasAllQueryColors = [...queryColors].every(color => cardColors.has(color));
+                    const cardColorsNoColorlessForMore = new Set([...cardColors].filter(c => c !== 'colorless'));
+                    return hasAllQueryColors && cardColorsNoColorlessForMore.size > queryColors.size;
+
+                case '<':
+                    // Less than - card must be a proper subset of query colors
+                    if (queryColors.has('colorless')) {
+                        return false; // Can't have less than colorless in meaningful way
+                    }
+                    const cardColorsNoColorlessForLess = new Set([...cardColors].filter(c => c !== 'colorless'));
+                    const isSubset = [...cardColorsNoColorlessForLess].every(color => queryColors.has(color));
+                    return isSubset && cardColorsNoColorlessForLess.size < queryColors.size && cardColorsNoColorlessForLess.size > 0;
+
+                case '!=':
+                    // Not equal - card colors must not exactly match query colors
+                    if (queryColors.has('colorless')) {
+                        return !(cardColors.size === 0 || (cardColors.size === 1 && cardColors.has('colorless')));
+                    }
+                    const cardColorsNoColorlessForNotEqual = new Set([...cardColors].filter(c => c !== 'colorless'));
+                    return !setsEqual(cardColorsNoColorlessForNotEqual, queryColors);
+            }
+        }
+
+        function parseColorsToSet(colorString, colorMap) {
+            const colors = new Set();
+
+            // Handle explicitly colorless cards
+            if (colorString === 'colorless') {
+                colors.add('colorless');
+                return colors;
+            }
+
+            // Handle empty or undefined color strings - these are colorless
+            if (!colorString || colorString.trim() === '') {
+                return colors; // Return empty set for truly colorless cards
+            }
+
+            // Split by semicolon, comma, slash, or whitespace to handle various formats
+            const colorParts = colorString.split(/[\s,;/]+/).map(c => c.trim()).filter(c => c !== '');
+
+            for (let colorPart of colorParts) {
+                if (!colorPart) continue;
+                const partLower = colorPart.toLowerCase();
+
+                // Check if it's a single-letter abbreviation
+                if (colorMap[partLower]) {
+                    colors.add(colorMap[partLower]);
+                    continue;
+                }
+
+                // Check if it's a full color name
+                const fullColorNames = ['white', 'blue', 'black', 'red', 'green', 'purple', 'colorless'];
+                if (fullColorNames.includes(partLower)) {
+                    colors.add(partLower);
+                    continue;
+                }
+
+                // If it's a string of abbreviations (e.g., "wug"), add each
+                if (/^[wubrgpc]+$/.test(partLower)) {
+                    for (let char of partLower) {
+                        if (colorMap[char]) {
+                            colors.add(colorMap[char]);
+                        }
+                    }
+                    continue;
+                }
+
+                // Try to find color names inside the part (for phrases)
+                for (let colorName of fullColorNames) {
+                    if (partLower.includes(colorName)) {
+                        colors.add(colorName);
+                    }
+                }
+            }
+
+            return colors;
+        }
+
+        function setsEqual(set1, set2) {
+            if (set1.size !== set2.size) return false;
+            for (let item of set1) {
+                if (!set2.has(item)) return false;
+            }
+            return true;
+        }
+
+        function updatePaginationInfo() {
+            const cardsToUse = filteredCards.length > 0 ? filteredCards : [];
+            const totalPages = Math.ceil(cardsToUse.length / CARDS_PER_PAGE);
+            const pageInfo = document.getElementById('page-info');
+
+            if (cardsToUse.length === 0) {
+                pageInfo.textContent = `No cards to display`;
+            } else {
+                pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+            }
+
+            // Enable/disable buttons based on current page
+            const prevButton = document.getElementById('prev-page');
+            const nextButton = document.getElementById('next-page');
+
+            prevButton.disabled = currentPage === 1 || totalPages === 0;
+            nextButton.disabled = currentPage === totalPages || totalPages === 0;
+        }
+
+
+        let allCards = null;
+        let filteredCards = [];
+        let currentView = 'grid';
+        let currentSort = 'name';
+        let currentPage = 1;
+        let showImages = true; // Default to not showing images
+        let hasSearched = false; // Track if user has performed a search
+        const CARDS_PER_PAGE = 60;
+        const CARDS_PER_ROW = 4; // Number of cards per row in grid view
+
+        let selectedCard = null; // when the user clicks on a card, we will store the selected card data here to display in the modal
+
+        function applyGridLayout() {
+            // Set the CSS custom property for cards per row
+            document.documentElement.style.setProperty('--cards-per-row', CARDS_PER_ROW);
+
+            // Calculate max width: (cards * card_width) + (gaps between cards)
+            const cardWidth = 320; // max card width
+            const gap = 16; // gap between cards
+            const maxWidth = (CARDS_PER_ROW * cardWidth) + ((CARDS_PER_ROW - 1) * gap);
+            document.documentElement.style.setProperty('--max-grid-width', `${maxWidth}px`);
+        }
+
+        function parseUrlParameters() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const searchQuery = urlParams.get('q');
+
+            if (searchQuery) {
+                // Decode the URL parameter and set it in the search input
+                const decodedQuery = decodeURIComponent(searchQuery);
+                document.getElementById('searchInput').value = decodedQuery;
+                return decodedQuery;
+            }
+
+            return null;
+        }
+
+        function updateUrlWithSearch(searchQuery) {
+            const url = new URL(window.location);
+
+            if (searchQuery && searchQuery.trim() !== '') {
+                url.searchParams.set('q', encodeURIComponent(searchQuery));
+            } else {
+                url.searchParams.delete('q');
+            }
+
+            // Update the URL without reloading the page
+            window.history.replaceState({}, '', url);
+        }
+
+        async function initializeApp() {
+            // Apply grid layout based on CARDS_PER_ROW constant
+            applyGridLayout();
+
+            // Set up image toggle event listener
+            // document.getElementById('imageToggle').addEventListener('change', function (e) {
+            //     showImages = e.target.checked;
+            //     parseCards(); // Re-render cards with or without images
+            // });
+
+            try {
+                // Note: for now we will use the sample data defined above
+                // Uncomment the following lines to fetch data from a remote source
+                const response = await fetch('https://raw.githubusercontent.com/bones-bones/hellfall/refs/heads/main/src/data/Hellscube-Database.json');
+                const data = await response.json();
+                allCards = data;
+
+                // Filter out cards that have isActualToken set to true
+                allCards.data = allCards.data.filter(card => !card.isActualToken);
+
+                applyErrata();
+
+                // Sort cards by color order: White, Blue, Black, Red, Green
+                sortCardsByColor();
+
+                // Check for URL parameters and apply search if present
+                const urlSearchQuery = parseUrlParameters();
+                if (urlSearchQuery) {
+                    // Apply the search from URL parameters
+                    filteredCards = allCards.data.filter(card => matchesSearchQuery(card, urlSearchQuery));
+                    hasSearched = true;
+                    currentPage = 1;
+                    parseCards();
+                } else {
+                    // Don't parse cards initially - wait for user to search
+                    updatePaginationInfo(); // Just update pagination to show empty state
+                }
+            } catch (error) {
+                console.error('Error loading sample data:', error);
+            }
+        }
+
+        function applyErrata() {
+            // Apply errata to the card data by card name
+
+            if (!allCards || !allCards.data) return;
+
+            // Define errata as an object where keys are card names and values are the new text
+            const example = [{
+                'name': 'Bruhcoil Engine',
+                'power': 9,
+                'toughness': 9,
+            },
+            {
+                'name': 'Underrated White Aggro Card',
+                'cost': '{W}'
+            }];
+
+            // Apply the errata to the allCards data
+            allCards.data.forEach(card => {
+                const erratum = example.find(e => e.name === card.Name);
+                if (erratum) {
+                    if (erratum.power) {
+                        card.power[0] = erratum.power;
+                    }
+                    if (erratum.toughness) {
+                        card.toughness[0] = erratum.toughness;
+                    }
+                    if (erratum.cost) {
+                        card.Cost[0] = erratum.cost;
+                    }
+                }
+            });
+        }
+
+        function sortCardsByColor() {
+            if (!allCards || !allCards.data) return;
+
+            // Define color priority order: White, Blue, Black, Red, Green, then others
+            const colorPriority = {
+                'white': 1,
+                'blue': 2,
+                'black': 3,
+                'red': 4,
+                'green': 5,
+                'purple': 6,
+                'colorless': 7,
+                'multicolor': 8
+            };
+
+            allCards.data.sort((a, b) => {
+                // Get the primary color for each card
+                const aColor = getPrimaryColor(a);
+                const bColor = getPrimaryColor(b);
+
+                // Get priority values (default to 999 for unknown colors)
+                const aPriority = colorPriority[aColor] || 999;
+                const bPriority = colorPriority[bColor] || 999;
+
+                // Primary sort by color priority
+                if (aPriority !== bPriority) {
+                    return aPriority - bPriority;
+                }
+
+                // Secondary sort by card name alphabetically
+                return a.Name.localeCompare(b.Name);
+            });
+        }
+
+        function getPrimaryColor(card) {
+            const cardColor = (card['Color(s)'] || '').toLowerCase();
+
+            // Handle explicitly colorless cards
+            if (cardColor === 'colorless' || cardColor === '') {
+                return 'colorless';
+            }
+
+            // Split colors by semicolon to handle multiple colors
+            const colors = cardColor.split(';').map(c => c.trim()).filter(c => c !== '');
+
+            // If more than one color, it's multicolor - sort to end
+            if (colors.length > 1) {
+                return 'multicolor';
+            }
+
+            // For single color, normalize it
+            const singleColor = colors[0];
+
+            // Define color mappings
+            const colorMap = {
+                'w': 'white',
+                'u': 'blue',
+                'b': 'black',
+                'r': 'red',
+                'g': 'green',
+                'p': 'purple'
+            };
+
+            // Check for single color abbreviation
+            if (colorMap[singleColor]) {
+                return colorMap[singleColor];
+            }
+
+            // Check for full color names
+            const fullColorNames = ['white', 'blue', 'black', 'red', 'green', 'purple'];
+            for (const colorName of fullColorNames) {
+                if (singleColor === colorName) {
+                    return colorName;
+                }
+            }
+
+            // Default to colorless if no color found
+            return 'colorless';
+        }
+
+        function parseCards() {
+            if (!allCards) return;
+
+            const cardContainer = document.getElementById('card-container');
+            const emptyState = document.getElementById('empty-state');
+            const noResults = document.getElementById('no-results');
+            cardContainer.innerHTML = ''; // Clear previous cards
+
+            // Use filtered cards if we have any, otherwise show nothing initially
+            const cardsToUse = filteredCards.length > 0 ? filteredCards : [];
+
+            // Show/hide messages based on state
+            if (cardsToUse.length === 0) {
+                if (hasSearched) {
+                    // User has searched but no results found
+                    emptyState.style.display = 'none';
+                    noResults.style.display = 'block';
+                } else {
+                    // Initial state - user hasn't searched yet
+                    emptyState.style.display = 'block';
+                    noResults.style.display = 'none';
+                }
+            } else {
+                // Cards found, hide both messages
+                emptyState.style.display = 'none';
+                noResults.style.display = 'none';
+            }
+
+            // Pagination logic
+            const startIdx = (currentPage - 1) * CARDS_PER_PAGE;
+            const endIdx = startIdx + CARDS_PER_PAGE;
+            const cardsToShow = cardsToUse.slice(startIdx, endIdx);
+
+            cardsToShow.forEach(cardData => {
+                const card = createCard(cardData);
+                cardContainer.appendChild(card);
+            });
+
+            // Update pagination info after rendering cards
+            updatePaginationInfo();
+        }
+
+        function createCard(cardData) {
+            const card = document.createElement('div');
+            card.className = 'card';
+
+            if (showImages) {
+                card.innerHTML = `
+                    <img src="${cardData.Image[0]}" alt="${cardData.Name}" 
+                        style="width: 300px; height: 418px; max-height: 418px; object-fit: cover; display: block;" 
+                        onload="this.style.height='';" 
+                    />
+                `;
+            } else {
+                // Create placeholder card with basic info
+                const cardType = [
+                    ...(cardData['Supertype(s)'][0].split(';').join(' ') || []),
+                    ...(cardData['Card Type(s)'][0].split(';').join(' ') || []),
+                    ...(cardData['Subtype(s)'][0].split(';').join(' ') || [])
+                ].filter(t => t && t.trim()).join(' ');
+
+                card.innerHTML = `
+                    <div class="placeholder-card">
+                        <div class="card-name">${cardData.Name}</div>
+                        <div class="card-cost">${manaParser(cardData.Cost[0] || '')}</div>
+                        <div class="card-type">
+                            ${(cardData['Supertype(s)'] && cardData['Supertype(s)'][0] ? cardData['Supertype(s)'][0].split(';').join(' ') + ' ' : '')}
+                                                ${(cardData['Card Type(s)'] && cardData['Card Type(s)'][0] ? cardData['Card Type(s)'][0].split(';').join(' ') : '')}
+                                                ${(cardData['Subtype(s)'] && cardData['Subtype(s)'][0] ? ' — ' + cardData['Subtype(s)'][0].split(';').join(' ') : '')}
+                    </div>
+                        ${cardData.power && cardData.power[0] ? `<div>${cardData.power[0]}/${cardData.toughness[0]}</div>` : ''}
+                        <div style="margin-top: auto; font-size: 11px; color: #888;">
+                            ${cardData.Set} • ${cardData.Creator}
+                        </div>
+                    </div>
+                `;
+            }
+
+            card.addEventListener('click', () => {
+                selectedCard = cardData;
+                openModal();
+            });
+            return card;
+        }
+
+        function openModal() {
+            if (!selectedCard) return;
+            const modal = document.getElementById('main-dialog');
+
+            // Use image if showImages is true, otherwise use placeholder
+            const imageContent = showImages
+                ? `<img src="${selectedCard.Image[0]}" alt="${selectedCard.Name}" style="min-width: 320px; max-width: 320px; height: auto; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);" />`
+                : `<div class="placeholder-card" style="min-width: 320px; max-width: 320px; height: 446px;">
+                    <div class="card-name">${selectedCard.Name}</div>
+                    <div class="card-cost">${manaParser(selectedCard.Cost[0] || '')}</div>
+                    <div class="card-type">${(selectedCard['Supertype(s)'] && selectedCard['Supertype(s)'][0] ? selectedCard['Supertype(s)'][0].split(';').join(' ') + ' ' : '')}
+                                                ${(selectedCard['Card Type(s)'] && selectedCard['Card Type(s)'][0] ? selectedCard['Card Type(s)'][0].split(';').join(' ') : '')}
+                                                ${(selectedCard['Subtype(s)'] && selectedCard['Subtype(s)'][0] ? ' — ' + selectedCard['Subtype(s)'][0].split(';').join(' ') : '')}
+                    </div>
+                    ${selectedCard.power && selectedCard.power[0] ? `<div>${selectedCard.power[0]}/${selectedCard.toughness[0]}</div>` : ''}
+                  </div>`;
+
+            // Build modal content for the selected card
+            function renderCardModalContent(card) {
+                // Helper to render type line
+                function renderTypeLine(idx = 0) {
+                    const supertype = card['Supertype(s)']?.[idx] ? card['Supertype(s)'][idx].split(';').join(' ') + ' ' : '';
+                    const cardtype = card['Card Type(s)']?.[idx] ? card['Card Type(s)'][idx].split(';').join(' ') : '';
+                    const subtype = card['Subtype(s)']?.[idx] ? ' — ' + card['Subtype(s)'][idx].split(';').join(' ') : '';
+                    return `${supertype}${cardtype}${subtype}`;
+                }
+
+                // Helper to render cost
+                function renderCost(idx = 0) {
+                    return card.Cost?.[idx] ? manaParser(card.Cost[idx]) : '';
+                }
+
+                // Helper to render power/toughness
+                function renderPT(idx = 0) {
+                    if (card.power?.[idx]) {
+                        const pt = `${card.power[idx]}/${card.toughness?.[idx] ?? '—'}`;
+                        return `<span class="card-details" style="color: #fff!important; font-size: 1.2em;">${pt}</span>`;
+                    }
+                    return '';
+                }
+
+                // Helper to render flavor text
+                function renderFlavor(idx = 0) {
+                    if (card['Flavor Text']?.[idx]) {
+                        return `<div class="flavor-text" style="font-style: italic; color: #b0c4ff; margin-top: 4px; border-left: 3px solid #b0c4ff; padding-left: 10px;">
+                            ${parseCardText(card['Flavor Text'][idx], true)}
+                        </div>`;
+                    }
+                    return '';
+                }
+
+                // Helper to render each face (for MDFC or split cards)
+                function renderFaces() {
+                    if (Array.isArray(card['Text Box']) && card['Text Box'].length > 1) {
+                        return card['Text Box'].map((text, idx) => {
+                            const hasText = text && text.trim() !== '';
+                            const hasFlavor = card['Flavor Text']?.[idx] && card['Flavor Text'][idx].trim() !== '';
+                            if (!hasText && !hasFlavor) return '';
+                            return `
+                                <div style="margin-bottom: 12px;">
+                                    <div class="card-face-header">
+                                        <span class="card-details card-face-type" style="font-size: 1em; color: #b0c4ff;">
+                                            ${renderTypeLine(idx)}
+                                        </span>
+                                        <span class="card-face-cost" style="font-size: 1.2em;">
+                                            ${renderCost(idx)}
+                                        </span>
+                                    </div>
+                                    <div class="card-text" style="background: #00105c; border-radius: 6px; padding: 12px; color: #fff; font-size: 1.1em;">
+                                        ${parseCardText(text || '')}
+                                    </div>
+                                    ${renderFlavor(idx)}
+                                    <div class="card-power-toughness" style="display: flex; gap: 8px; margin-top: 8px;">
+                                        ${renderPT(idx)}
+                                    </div>
+                                </div>
+                            `;
+                        }).filter(Boolean).join('');
+                    }
+                    return '';
+                }
+
+                // Card details (set, creator, rulings)
+                const details = `
+                    <div class="card-details" style="display: flex; gap: 16px; color: #b0c4ff; font-size: 0.95em; margin-top: 8px;">
+                        <div><strong>Set:</strong> ${card.Set}</div>
+                        <div><strong>Creator:</strong> ${card.Creator}</div>
+                    </div>
+                    ${card.Rulings ? `
+                        <div class="card-details" style="margin-top: 8px; color: #ffd700; font-size: 0.95em;">
+                            <strong>Rulings:</strong> ${card.Rulings.replace(/\\n/g, '<br />')}
+                        </div>
+                    ` : ''}
+                `;
+
+                return `
+                    <div style="display: flex; align-items: flex-start; gap: 16px;">
+                        ${imageContent}
+                        <div style="display: flex; flex-direction: column; gap: 10px; min-width: 320px; width: 100%;">
+                            <div class="card-name" style="font-size: 1.5em; font-weight: bold; color: #fff;">${card.Name}</div>
+                            ${renderFaces()}
+                            ${details}
+                        </div>
+                    </div>
+                `;
+            }
+
+            modal.querySelector('.content').innerHTML = renderCardModalContent(selectedCard);
+            modal.style.display = 'block';
+        }
+
+
+        function manaParser(manaString) {
+            // Parse a mana cost string like "{2}{U}" and convert it to HTML with mana symbols
+            if (!manaString) return '';
+            // Match all occurrences of {...}
+            const matches = manaString.match(/\{.*?\}/g);
+            if (!matches) return manaString;
+
+            return matches.map(symbol => {
+                let s = symbol.replace(/[{}]/g, '').toLowerCase();
+                if (s.split(' ').length > 1) {
+                    // If the symbol contains spaces, we need to handle it as a hybrid mana
+                    s = s.split(' ')[0].toLowerCase(); // Take the first part for hybrid mana
+                }
+
+                // Special cases
+                if (s.includes('u/bb')) return symbol;
+                if (s.includes('untap')) return `<img src="assets/Q.svg" class="mana-symbol" />`;
+                if (s.includes('r/h/g/h')) return `<img src="assets/RGP.svg" class="mana-symbol" />`;
+                if (s.includes('w/u/r')) return `<img src="assets/rwu.png" class="mana-symbol" />`;
+                if (s.includes('g/w/b')) return `<img src="assets/bgw.png" class="mana-symbol" />`;
+                if (s.includes('g/u/r')) return `<img src="assets/urg.png" class="mana-symbol" />`;
+                if (s.includes('w/r/g')) return `<img src="assets/rgw.png" class="mana-symbol" />`;
+                if (s.includes('r/w/g')) return `<img src="assets/rgw.png" class="mana-symbol" />`;
+
+                if (s == 'p') return '<img src="assets/P.png" class="mana-symbol" />';
+
+                // Handle hybrid and phyrexian mana
+                if (s.includes('/')) {
+                    if (s.includes('/c') || s.includes('1/') || s.includes('p')) return symbol;
+                    if (s.startsWith('h/')) {
+                        switch (s) {
+                            case 'h/r': return '<img src="assets/RP.svg" class="mana-symbol" />';
+                            case 'h/g': return '<img src="assets/GP.svg" class="mana-symbol" />';
+                            case 'h/u': return '<img src="assets/UP.svg" class="mana-symbol" />';
+                            case 'h/b': return '<img src="assets/BP.svg" class="mana-symbol" />';
+                            case 'h/w': return '<img src="assets/WP.svg" class="mana-symbol" />';
+                            default: return symbol;
+                        }
+                    }
+                    switch (s) {
+                        case 'u/w':
+                        case 'w/u': return `<img src="assets/WU.svg" class="mana-symbol" />`;
+                        case 'b/r':
+                        case 'r/b': return `<img src="assets/BR.svg" class="mana-symbol" />`;
+                        case 'u/b':
+                        case 'b/u': return `<img src="assets/UB.svg" class="mana-symbol" />`;
+                        case 'r/g':
+                        case 'g/r': return `<img src="assets/RG.svg" class="mana-symbol" />`;
+                        case 'g/w':
+                        case 'w/g': return `<img src="assets/GW.svg" class="mana-symbol" />`;
+                        case 'w/b':
+                        case 'b/w': return `<img src="assets/WB.svg" class="mana-symbol" />`;
+                        case 'u/r':
+                        case 'r/u': return `<img src="assets/UR.svg" class="mana-symbol" />`;
+                        case 'b/g':
+                        case 'g/b': return `<img src="assets/BG.svg" class="mana-symbol" />`;
+                        case 'r/w':
+                        case 'w/r': return `<img src="assets/RW.svg" class="mana-symbol" />`;
+                        case 'g/u':
+                        case 'u/g': return `<img src="assets/GU.svg" class="mana-symbol" />`;
+                    }
+                }
+
+                if (s.startsWith('+') || s.startsWith('-')) return symbol;
+
+                if (s.startsWith('tk')) {
+                    return `<img src="assets/TK.svg" class="mana-symbol" />`;
+                }
+
+                // Standard mana symbols
+                switch (s) {
+                    case 'w': return '<img src="assets/W.svg" class="mana-symbol" />';
+                    case 'u': return '<img src="assets/U.svg" class="mana-symbol" />';
+                    case 'b': return '<img src="assets/B.svg" class="mana-symbol" />';
+                    case 'r': return '<img src="assets/R.svg" class="mana-symbol" />';
+                    case 'g': return '<img src="assets/G.svg" class="mana-symbol" />';
+                    case 'x': return '<img src="assets/X.svg" class="mana-symbol" />';
+                    case 'y': return '<img src="assets/Y.svg" class="mana-symbol" />';
+                    case 'z': return '<img src="assets/Z.svg" class="mana-symbol" />';
+                    case 't': return '<img src="assets/T.svg" class="mana-symbol" />';
+                    case 'q': return '<img src="assets/Q.svg" class="mana-symbol" />';
+                    case 'c': return '<img src="assets/C.svg" class="mana-symbol" />';
+                    case 'paw': return '<img src="assets/P.svg" class="mana-symbol" />';
+                }
+
+                // Numeric mana
+                if (!isNaN(s)) {
+                    return `<img src="assets/${s}.svg" class="mana-symbol" />`;
+                }
+
+                // Fallback: return the original symbol if no match found
+                return symbol;
+            }).join('');
+        }
+
+        function parseCardText(text, flavor = false) {
+            // Parse card text to replace both mana symbols and newlines
+            if (!text) return '';
+
+            // First parse mana symbols, then handle newlines
+            let parsedText = text;
+
+            // Find and replace mana symbols in the text
+            const manaMatches = text.match(/\{[^}]*\}/g);
+            if (manaMatches) {
+                manaMatches.forEach(symbol => {
+                    const parsedSymbol = manaParser(symbol);
+                    parsedText = parsedText.replace(symbol, parsedSymbol);
+                });
+            }
+
+            // Handle text inside of ( ), it should be italicized
+            parsedText = parsedText.replace(/\(([^)]+)\)/g, '<i>($1)</i>');
+
+            if (flavor) {
+                // If this is flavor text, we want to return it as is
+                return parsedText.replace(/\\n|\n/g, '<br>');
+            }
+            // Replace both literal "\n" (escaped) and actual newlines with <br>
+            return parsedText.replace(/\\n|\n/g, '<div style="height:12px;"></div>');
+        }
+
+        initializeApp();
+    </script>
+</body>
+
+</html>
