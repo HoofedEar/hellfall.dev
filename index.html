@@ -69,9 +69,6 @@
         /* Prevent body scroll when modal is open */
         body.modal-open {
             overflow: hidden;
-            position: fixed;
-            width: 100%;
-            height: 100%;
         }
 
         /* Card Face Header */
@@ -165,6 +162,14 @@
 
         /* Tablet and Small Desktop (≤900px) */
         @media screen and (max-width: 900px) {
+            /* Prevent body scroll when modal is open on mobile */
+            body.modal-open {
+                overflow: hidden;
+                position: fixed;
+                width: 100%;
+                height: 100%;
+            }
+
             .main-modal {
                 top: 0;
                 left: 0;
@@ -433,26 +438,30 @@
             }
         });
 
-        // Advanced search functionality (Scryfall-style)
-        document.getElementById('searchInput').addEventListener('keydown', function (e) {
-            if (e.key === 'Enter') {
-                const searchTerm = e.target.value.trim();
-
-                if (searchTerm === '') {
+        // Search function to be reused
+        function performSearch(searchTerm = null) {
+            const searchInput = document.getElementById('searchInput');
+            const term = searchTerm !== null ? searchTerm : searchInput.value.trim();
+            
+            try {
+                if (term === '') {
                     filteredCards = allCards.data;  // Show all cards when search is empty
                 } else {
-                    filteredCards = allCards.data.filter(card => matchesSearchQuery(card, searchTerm));
+                    filteredCards = allCards.data.filter(card => matchesSearchQuery(card, term));
                 }
 
                 // Update URL with the search query
-                updateUrlWithSearch(searchTerm);
+                updateUrlWithSearch(term);
 
                 // Reset to page 1 when searching
                 currentPage = 1;
                 hasSearched = true; // Mark that user has performed a search
                 parseCards();
+                updatePaginationInfo(); // Ensure pagination is updated
+            } catch (error) {
+                console.error('Error performing search:', error);
             }
-        });
+        }
 
         function matchesSearchQuery(card, query) {
             const queryLower = query.toLowerCase();
@@ -528,7 +537,6 @@
                 }
             });
 
-            // console.log('Final tokens:', tokens); // Debug logging
             return tokens;
         }
 
@@ -553,16 +561,10 @@
 
                 case 'oracle':
                     // Search for the filter value as a substring in any of the card's text boxes (case-insensitive)
-                    // console.log('Oracle search for:', filter.value); // Debug logging
                     return (card['Text Box'] || []).some(text => {
                         if (!text) return false;
                         const textLower = text.toLowerCase();
                         const matches = textLower.includes(filter.value);
-                        // // Debug logging for oracle searches
-                        // console.log('Checking text:', text, 'lowercase:', textLower, 'search term:', filter.value, 'matches:', matches);
-                        // if (matches) {
-                        //     console.log(`Oracle match found: "${filter.value}" in "${text}"`);
-                        // }
                         return matches;
                     });
 
@@ -601,8 +603,6 @@
 
         function matchesColor(card, colorQuery, operator = ':') {
             const cardColor = (card['Color(s)'] || '').toLowerCase();
-
-            // console.log(colorQuery);
 
             // Handle color abbreviations and full names
             const colorMap = {
@@ -829,6 +829,9 @@
             // Apply grid layout based on CARDS_PER_ROW constant
             applyGridLayout();
 
+            // Set up search event listeners
+            setupSearchListeners();
+
             // Set up image toggle event listener
             // document.getElementById('imageToggle').addEventListener('change', function (e) {
             //     showImages = e.target.checked;
@@ -863,8 +866,32 @@
                     updatePaginationInfo(); // Just update pagination to show empty state
                 }
             } catch (error) {
-                console.error('Error loading sample data:', error);
+                // Error loading data
             }
+        }
+
+        function setupSearchListeners() {
+            const searchInput = document.getElementById('searchInput');
+            
+            // Remove any existing listeners to prevent duplicates
+            const newSearchInput = searchInput.cloneNode(true);
+            searchInput.parentNode.replaceChild(newSearchInput, searchInput);
+            
+            // Set up fresh event listeners
+            newSearchInput.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault(); // Prevent form submission or other default behavior
+                    performSearch();
+                }
+            });
+
+            // Also listen for Enter key on keyup as backup
+            newSearchInput.addEventListener('keyup', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    performSearch();
+                }
+            });
         }
 
         function applyErrata() {
