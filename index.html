@@ -383,7 +383,7 @@
             <span class="content"></span>
         </p>
         <div class="button-group">
-            <button type="button" class="skew">OK</button>
+            <button type="button" class="skew" style="width: 100%;">OK</button>
         </div>
     </div>
 
@@ -742,7 +742,7 @@
             const pageInfo = document.getElementById('page-info');
 
             if (cardsToUse.length === 0) {
-                pageInfo.textContent = `No cards to display`;
+                pageInfo.textContent = ``;
             } else {
                 pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
             }
