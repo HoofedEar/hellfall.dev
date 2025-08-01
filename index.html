@@ -152,6 +152,17 @@
             background-color: inherit;
         }
 
+        /* iOS Safari touch fixes */
+        .modal button {
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            cursor: pointer;
+        }
+
+        .modal button:active {
+            transform: scale(0.98);
+        }
+
         /* Tablet and Small Desktop (≤900px) */
         @media screen and (max-width: 900px) {
             .main-modal {
@@ -388,9 +399,17 @@
     </div>
 
     <script>
-        document.querySelector('.modal .skew').addEventListener('click', function () {
+        // Fix for iOS Safari modal close button - use both touch and click events
+        function closeModal() {
             document.getElementById('main-dialog').style.display = 'none';
             document.body.classList.remove('modal-open');
+        }
+        
+        const modalButton = document.querySelector('.modal .skew');
+        modalButton.addEventListener('click', closeModal);
+        modalButton.addEventListener('touchend', function(e) {
+            e.preventDefault(); // Prevent the click event from firing after touchend
+            closeModal();
         });
 
         // Pagination event listeners
