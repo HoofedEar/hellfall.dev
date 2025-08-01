@@ -512,8 +512,8 @@
         function parseSearchQuery(query) {
             const tokens = { filters: [], general: [] };
 
-            // Split by spaces but preserve quoted strings - improved regex to handle filter:quoted patterns
-            const parts = query.match(/\w+:"[^"]*"|\w+:[^\s]+|"[^"]*"|[^\s"]+/g) || [];
+            // Supports: filter:"value", filter:“value”, "general", ‘general’, and unquoted
+            const parts = query.match(/\w+:(?:"[^"]*"|“[^”]*”|‘[^’]*’|[^\s]+)|(?:"[^"]*"|“[^”]*”|‘[^’]*’)|[^\s"“”‘’]+/g) || [];
 
             parts.forEach(part => {
                 const originalPart = part;
