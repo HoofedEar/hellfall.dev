@@ -1,0 +1,13 @@
+[
+    {
+        "name": "Bruhcoil Engine",
+        "face": 0,
+        "power": 9,
+        "toughness": 9
+    },
+    {
+        "name": "Underrated White Aggro Card",
+        "face": 0,
+        "cost": "{W}"
+    }
+]

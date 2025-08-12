@@ -162,6 +162,7 @@
 
         /* Tablet and Small Desktop (≤900px) */
         @media screen and (max-width: 900px) {
+
             /* Prevent body scroll when modal is open on mobile */
             body.modal-open {
                 overflow: hidden;
@@ -374,7 +375,7 @@
         <!-- Empty state message -->
         <div id="empty-state"
             style="text-align: center; color: #b0c4ff; padding: 40px; font-size: 1.2em; display: block;">
-            <div style="margin-bottom: 8px; font-weight: bold;">Ready to explore Hellfall cards?</div>
+            <div style="margin-bottom: 8px; font-weight: bold;">Ready to explore Hellscube cards?</div>
             <div>Enter a search term, or an empty search to view all cards</div>
             <div>Try 'set:hc4' or 'c=u' or 'o:"three cards"'</div>
         </div>
@@ -409,10 +410,10 @@
             document.getElementById('main-dialog').style.display = 'none';
             document.body.classList.remove('modal-open');
         }
-        
+
         const modalButton = document.querySelector('.modal .skew');
         modalButton.addEventListener('click', closeModal);
-        modalButton.addEventListener('touchend', function(e) {
+        modalButton.addEventListener('touchend', function (e) {
             e.preventDefault(); // Prevent the click event from firing after touchend
             closeModal();
         });
@@ -442,7 +443,7 @@
         function performSearch(searchTerm = null) {
             const searchInput = document.getElementById('searchInput');
             const term = searchTerm !== null ? searchTerm : searchInput.value.trim();
-            
+
             try {
                 if (term === '') {
                     filteredCards = allCards.data;  // Show all cards when search is empty
@@ -872,11 +873,11 @@
 
         function setupSearchListeners() {
             const searchInput = document.getElementById('searchInput');
-            
+
             // Remove any existing listeners to prevent duplicates
             const newSearchInput = searchInput.cloneNode(true);
             searchInput.parentNode.replaceChild(newSearchInput, searchInput);
-            
+
             // Set up fresh event listeners
             newSearchInput.addEventListener('keydown', function (e) {
                 if (e.key === 'Enter') {
@@ -899,31 +900,25 @@
 
             if (!allCards || !allCards.data) return;
 
-            // Define errata as an object where keys are card names and values are the new text
-            const example = [{
-                'name': 'Bruhcoil Engine',
-                'power': 9,
-                'toughness': 9,
-            },
-            {
-                'name': 'Underrated White Aggro Card',
-                'cost': '{W}'
-            }];
-
-            // Apply the errata to the allCards data
-            allCards.data.forEach(card => {
-                const erratum = example.find(e => e.name === card.Name);
-                if (erratum) {
-                    if (erratum.power) {
-                        card.power[0] = erratum.power;
-                    }
-                    if (erratum.toughness) {
-                        card.toughness[0] = erratum.toughness;
-                    }
-                    if (erratum.cost) {
-                        card.Cost[0] = erratum.cost;
-                    }
-                }
+            // Load errata JSON data from 'errata.json'
+            fetch('errata.json')
+                .then(response => response.json())
+                .then(data => {
+                    // Apply the errata to the allCards data
+                    allCards.data.forEach(card => {
+                        const erratum = data.find(e => e.name === card.Name);
+                        if (erratum) {
+                            if (erratum.power) {
+                                card.power[0] = erratum.power;
+                            }
+                            if (erratum.toughness) {
+                                card.toughness[0] = erratum.toughness;
+                            }
+                            if (erratum.cost) {
+                                card.Cost[0] = erratum.cost;
+                            }
+                        }
+                    });
             });
         }
 
